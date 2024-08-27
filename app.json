@@ -29,10 +29,12 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-location",
+      [
+        "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "Allow EV Charge Hub to use your location."
         }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

@@ -12,6 +12,7 @@ import { Link } from "expo-router";
 import { NavigationContainer } from "@react-navigation/native";
 import TabNavigation from "./navigations/TabNavigation.jsx";
 import * as Location from 'expo-location';
+import { UserLocationContext } from "./contexts/UserLocationContext.jsx";
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -35,14 +36,14 @@ export default function Index() {
 
   //user token
   const tokenCache = {
-    async getToken(key: string) {
+    async getToken(key) {
       try {
         return await SecureStore.getItemAsync(key);
       } catch (err) {
         return null;
       }
     },
-    async saveToken(key: string, value: string) {
+    async saveToken(key, value) {
       try {
         return await SecureStore.setItemAsync(key, value);
       } catch (err) {
@@ -50,6 +51,24 @@ export default function Index() {
       }
     },
   };
+
+  // get user location on app launch
+  const [location, setLocation] = useState(null);
+  const [errorMsg, setErrorMsg] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setErrorMsg('Permission to access location was denied');
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      setLocation(location.coords);
+    })();
+  }, []);
 
 
   useEffect(() => {
@@ -68,14 +87,16 @@ export default function Index() {
       publishableKey={publishableKey}>
       <ClerkLoaded>
         <GestureHandlerRootView style={{ flex: 1 }}>
-          <View style={styles.container}>
-            <SignedIn>
-              <TabNavigation />
-            </SignedIn>
-            <SignedOut>
-              <LoginScreen />
-            </SignedOut>
-          </View>
+          <UserLocationContext.Provider value={{ location, setLocation }}>
+            <View style={styles.container}>
+              <SignedIn>
+                <TabNavigation />
+              </SignedIn>
+              <SignedOut>
+                <LoginScreen />
+              </SignedOut>
+            </View>
+          </UserLocationContext.Provider>
         </GestureHandlerRootView>
       </ClerkLoaded>
     </ClerkProvider>
@@ -85,6 +106,6 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop:20,
+    paddingTop: 20,
   },
 });
